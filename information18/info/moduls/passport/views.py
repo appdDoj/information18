@@ -141,10 +141,11 @@ def send_sms_code():
 
     try:
         ccp = CCP()
-        ccp.send_template_sms("18520340803", [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], 1)
+        ccp.send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], 1)
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
+
 
     #3.3 将生成6位的短信验证码值 存储到redis数据库
     try:

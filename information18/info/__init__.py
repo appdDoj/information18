@@ -73,7 +73,7 @@ def create_app(config_name):
         2.从ajax请求的请求头headers中提起X-CSRFToken字段
     获取到这个两个值然后做比较验证操作
     """
-    csrf = CSRFProtect(app)
+    # csrf = CSRFProtect(app)
 
     # 5.初始化拓展Session对象
     Session(app)
