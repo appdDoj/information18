@@ -58,8 +58,13 @@ def create_app(config_name):
     db.init_app(app)
 
     # 3.创建redis数据库对象
+    # decode_responses 将二进制数据转成字符串
     global redis_store
-    redis_store = StrictRedis(host=config_class.REDIS_HOST, port=config_class.REDIS_PORT, db=config_class.REDIS_NUM)
+    redis_store = StrictRedis(host=config_class.REDIS_HOST,
+                              port=config_class.REDIS_PORT,
+                              db=config_class.REDIS_NUM,
+                              decode_responses=True
+                              )
 
     """
     #4.初始化csrf保护机制
