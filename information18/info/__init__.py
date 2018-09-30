@@ -7,6 +7,7 @@ from flask_wtf.csrf import CSRFProtect, generate_csrf
 # 帮助我们将flask中的session存储位置进行调整（内存--redis）
 from flask_session import Session
 from config import config_dict
+from info.utits.common import do_index_class
 
 # 没有app对象暂时不初始化，只是声明
 db = SQLAlchemy()
@@ -85,6 +86,8 @@ def create_app(config_name):
         #3.返回响应对象
         return response
 
+    # 添加过滤器
+    app.add_template_filter(do_index_class, "do_index_class")
 
     # 5.初始化拓展Session对象
     Session(app)

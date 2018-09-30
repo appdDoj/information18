@@ -3,15 +3,15 @@ from flask import current_app, render_template, session, jsonify
 from info.utits.response_code import RET
 from . import index_bp
 from info import redis_store
-from info.models import User
+from info.models import User, News
+from info import constants
 
 
 #2. 使用蓝图
 @index_bp.route('/')
 def hello_world():
-    # 返回模板文件
-    print(current_app.url_map)
-    #1.获取用户id
+    # -------------------用户数据查询------------------
+    #1.获取用户id-
     user_id = session.get("user_id")
     # 用户id有值才去查询用户数据
     user = None # type: User
@@ -35,10 +35,28 @@ def hello_world():
     #在模板中获取方法
     data.user_info.nick_name: 获取用户昵称
     """
+    # -------------------点击排行新闻数据查询------------------
+    try:
+        news_rank_list = News.query.order_by(News.clicks.desc()).limit(constants.CLICK_RANK_MAX_NEWS).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询点击排行数据异常")
+
+    # news_rank_list = [news对象1,news对象2, ...]
+    # news_rank_dict_list = [{新闻字典},{新闻字典}]
+    # 字典列表容器
+    news_rank_dict_list = []
+    for news_obj in news_rank_list if news_rank_list else []:
+        # 将新闻对象转换成新闻字典
+        news_dict = news_obj.to_dict()
+        # 将字典装到一个列表中
+        news_rank_dict_list.append(news_dict)
+
     data = {
         "user_info": user.to_dict() if user else None,
+        "news_rank_list": news_rank_dict_list
     }
-
+    # 返回模板文件
     return render_template("news/index.html",data=data)
 
 
