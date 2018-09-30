@@ -128,6 +128,9 @@ $(function(){
             data: JSON.stringify(params),
             contentType: "application/json",
             dataType: 'json',
+            headers:{
+             "X-CSRFToken": getCookie("csrf_token")
+            },
             success: function (resp) {
                 if(resp.errno == '0'){
                     //登录成功回调
@@ -191,6 +194,9 @@ $(function(){
             data: JSON.stringify(params),
             contentType: "application/json",
             dataType: 'json',
+            headers:{
+             "X-CSRFToken": getCookie("csrf_token")
+            },
             // 回调函数
             success: function (resp) {
                 if(resp.errno == '0'){
@@ -263,6 +269,9 @@ function sendSMSCode() {
         contentType: "application/json",
         // 从后端拿到的数据是json格式
         dataType: 'json',
+        headers:{
+             "X-CSRFToken": getCookie("csrf_token")
+         },
         // resp = jsonify(errno=RET.OK, errmsg="云通讯发送短信验证码失败")
         success: function (resp) {
                 //发送短信验证码回调函数
@@ -312,6 +321,28 @@ function sendSMSCode() {
 
     })
 
+}
+
+//  退出登录
+function login_out() {
+
+    // 发起注册请求
+    $.ajax({
+        // 设置url
+         url: "/passport/login_out",
+         // 设置请求方式
+         type: "post",
+         headers:{
+             "X-CSRFToken": getCookie("csrf_token")
+         },
+         success: function (resp) {
+            if(resp.errno == "0"){
+                // 返回成功 刷新页面
+                location.reload()
+            }else{
+            }
+         }
+     })
 }
 
 // 调用该函数模拟点击左侧按钮

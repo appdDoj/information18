@@ -3,7 +3,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 # 帮助我们将flask中的session存储位置进行调整（内存--redis）
 from flask_session import Session
 from config import config_dict
@@ -73,7 +73,18 @@ def create_app(config_name):
         2.从ajax请求的请求头headers中提起X-CSRFToken字段
     获取到这个两个值然后做比较验证操作
     """
-    # csrf = CSRFProtect(app)
+    csrf = CSRFProtect(app)
+
+    # 使用钩子函数统一设置cookie值
+    @app.after_request
+    def set_csrftoken(response):
+        #1.生成csrf_token随机值
+        csrf_token = generate_csrf()
+        #2.借助response对象设置csrf_token值到cookie中
+        response.set_cookie("csrf_token", csrf_token)
+        #3.返回响应对象
+        return response
+
 
     # 5.初始化拓展Session对象
     Session(app)

@@ -12,6 +12,18 @@ from info.lib.yuntongxun.sms import CCP
 from datetime import datetime
 
 
+# 127.0.0.1:5000/passport/login_out
+@passport_bp.route('/login_out', methods=['POST'])
+def login_out():
+    """退出登录"""
+
+    # 删除session中用户登录信息
+    session.pop("user_id")
+    session.pop("nick_name")
+    session.pop("mobile")
+    return jsonify(errno=RET.OK, errmsg="退出登录成功")
+
+
 # 127.0.0.1：5000/passport/login
 @passport_bp.route('/login', methods=['POST'])
 def login():
