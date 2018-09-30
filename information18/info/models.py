@@ -1,6 +1,5 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-
 from info import constants
 from . import db
 
@@ -63,13 +62,25 @@ class User(BaseModel, db.Model):
     # news.user ： 该新闻是谁发布的
     news_list = db.relationship('News', backref='user', lazy='dynamic')
 
+    # 通过函数调用的方式对密码加密
+    def make_password_hash(self, password):
+        # 1.generate_password_hash(password): 生成加密后的密码并且返回
+        # 2.self: user对象， self.password_hash:加密密码属性
+        self.password_hash = generate_password_hash(password)
+
+    # 属性的get方法： print(user.password) -->触发get方法
     @property
     def password(self):
-        raise AttributeError("当前属性不可读")
+        raise AttributeError("该属性不能被读取")
 
+    # 属性的set方法  user.password = password(未加密密码) ---> 触发set方法
     @password.setter
-    def password(self, value):
-        self.password_hash = generate_password_hash(value)
+    def password(self, password):
+        # 1. generate_password_hash(password): 生成加密后的密码并且返回
+        # 2. self: user对象， self.password_hash:加密密码属性
+        self.password_hash = generate_password_hash(password)
+
+
 
     def check_passowrd(self, password):
         return check_password_hash(self.password_hash, password)

@@ -1,8 +1,6 @@
 # 登录注册业务逻辑
-from datetime import *
-
 from . import passport_bp
-from flask import request, abort, current_app, make_response, jsonify,session
+from flask import request, abort, current_app, make_response, jsonify, session
 from info.utits.captcha.captcha import captcha
 from info import redis_store, constants, db
 from info.utits.response_code import RET
@@ -11,6 +9,90 @@ import json
 import re
 import random
 from info.lib.yuntongxun.sms import CCP
+from datetime import datetime
+
+
+# 127.0.0.1:5000/passport/register
+@passport_bp.route('/register', methods=['POST'])
+def register():
+    """用户注册后端接口"""
+    """
+    1.获取参数
+        1.1 mobile手机号码，smscode短信验证码，password未加密密码
+    2.校验参数
+        2.1 非空判断
+        2.2 手机号码正则校验
+    3.逻辑处理
+        3.1 根据SMS_CODE_手机号码key去redis中获取正确的短信验证码值
+            3.1.1 有值：删除
+            3.1.2 没有值： 过期了
+        3.2 拿用户填写的短信验证码值和正确的短信验证码值进行比较
+        3.3 不一致：提示短信验证码填写错误
+        3.4 一致：使用User模型创建用户对象，并且赋值
+        3.5 一般需求：用户注册成功，第一次应该给他登录成功，记录session数据
+    4.返回值
+        注册成功
+    """
+    # 1.1 mobile手机号码，smscode短信验证码，password未加密密码
+    param_dict = request.json
+    mobile = param_dict.get("mobile", "")
+    smscode = param_dict.get("smscode", "")
+    password = param_dict.get("password", "")
+
+    #2.1 非空判断
+    if not all([mobile, smscode, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    #2.2 手机号码正则校验
+    if not re.match('1[3578][0-9]{9}', mobile):
+        # 手机号码格式有问题
+        current_app.logger.error("手机号码格式错误")
+        return jsonify(errno=RET.PARAMERR, errmsg="手机号码格式错误")
+
+    #3.1 根据SMS_CODE_手机号码key去redis中获取正确的短信验证码值
+    try:
+        real_smscode = redis_store.get("SMS_CODE_%s" % mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询真实短信验证码值异常")
+    #3.1.1 有值：从redis中将短信验证码值删除
+    if real_smscode:
+        redis_store.delete("SMS_CODE_%s" % mobile)
+    # 3.1.2 没有值： 过期了
+    else:
+        return jsonify(errno=RET.NODATA, errmsg="短信验证码过期")
+
+    #3.2 拿用户填写的短信验证码值和正确的短信验证码值进行比较
+    if real_smscode != smscode:
+        # 3.3 不一致：提示短信验证码填写错误
+        return jsonify(errno=RET.DATAERR, errmsg="短信验证码填写错误")
+
+    #3.4 一致：使用User模型创建用户对象，并且赋值
+    user = User()
+    user.nick_name = mobile
+    # 将手机号码赋值
+    user.mobile = mobile
+    # 当前时间作为最后一次登录时间
+    user.last_login = datetime.now()
+    #TODO: 密码加密处理
+    # user.make_password_hash(password)
+    user.password = password
+
+    # 将用户对象存储到数据库
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        # 数据库回滚
+        db.session.rollback()
+    #3.5 一般需求：用户注册成功，第一次应该给他登录成功，记录session数据
+    session["user_id"] = user.id
+    session["nick_name"] = user.mobile
+    session["mobile"] = user.mobile
+
+    #4.返回注册成功
+    return jsonify(errno=RET.OK, errmsg="注册成功")
+
 
 #2.使用蓝图
 # 127.0.0.1:5000/passport/image_code?code_id=uuid编号  (GET)
@@ -120,7 +202,7 @@ def send_sms_code():
     #细节1：全部转成小写
     #细节2：设置redis数据decode操作
     if real_image_code.lower() != image_code.lower():
-        return jsonify(errno=RET.PARAMERR, errmsg="图片验证码填写错误")
+        return jsonify(errno=RET.DATAERR, errmsg="图片验证码填写错误")
 
     """
         TODO: 手机号码有了（用户是否已经注册的判断，用户体验最好），
@@ -147,6 +229,8 @@ def send_sms_code():
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
+
+    # 发送短信验证失败
     if result != 0:
         return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
 
