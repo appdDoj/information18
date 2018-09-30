@@ -1,6 +1,7 @@
 from redis import StrictRedis
 import logging
 
+
 class Config(object):
     """项目配置 (父类)"""
     DEBUG = True
@@ -10,6 +11,9 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = "mysql://root:root@127.0.0.1:3306/information18"
     # 关闭数据库修改后跟踪
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # 取代db.session.commit()方法
+    # 在数据库会话对象结束的时候自动帮助提交信息到数据库
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
     #redis数据库配置信息
     REDIS_HOST = "127.0.0.1"

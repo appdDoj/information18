@@ -80,9 +80,12 @@ class User(BaseModel, db.Model):
         # 2. self: user对象， self.password_hash:加密密码属性
         self.password_hash = generate_password_hash(password)
 
-
-
+    # 检查密码是否一致
+    # 参数：未加密的密码
     def check_passowrd(self, password):
+        # 参数1：self.password_hash: 当前用户加密后的密码
+        # 参数2：未加密的密码
+        # 返回值：加密后对比成功返回True 否则返回False
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):

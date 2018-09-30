@@ -102,6 +102,7 @@ $(function(){
 
     // TODO 登录表单提交
     $(".login_form_con").submit(function (e) {
+        // 阻止表单默认提交行为
         e.preventDefault()
         var mobile = $(".login_form #mobile").val()
         var password = $(".login_form #password").val()
@@ -115,8 +116,32 @@ $(function(){
             $("#login-password-err").show();
             return;
         }
-
+        //组织请求数据
+        var params = {
+            "mobile": mobile,
+            "password": password
+        }
         // 发起登录请求
+        $.ajax({
+            url: "/passport/login",
+            type: 'POST',
+            data: JSON.stringify(params),
+            contentType: "application/json",
+            dataType: 'json',
+            success: function (resp) {
+                if(resp.errno == '0'){
+                    //登录成功回调
+                    window.location.reload()
+                }else{
+                    // 登录异常错误展示
+                    $("#login-password-err").html(resp.errmsg)
+                    $("#login-password-err").show()
+                }
+            }
+
+        })
+
+
     })
 
 

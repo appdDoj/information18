@@ -12,6 +12,68 @@ from info.lib.yuntongxun.sms import CCP
 from datetime import datetime
 
 
+# 127.0.0.1：5000/passport/login
+@passport_bp.route('/login', methods=['POST'])
+def login():
+    """用户登录后端接口"""
+    """
+    1.获取参数
+        1.1 mobile手机号码，password未加密密码
+    2.校验参数
+        2.1 非空判断
+        2.2 手机号码正则校验
+    3.逻辑处理
+        3.0 查询用户是否存在
+        3.1 验证密码是否一致
+        3.2 不一致： 提示密码填写错误
+        3.3 一致：记录用户登录信息
+    4.返回值
+        登录成功
+    """
+    # 1.1 mobile手机号码，password未加密密码
+    param_dict = request.json
+    mobile = param_dict.get("mobile", "")
+    password = param_dict.get("password", "")
+    #2.1 非空判断
+    if not all([mobile, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    #2.2 手机号码正则校验
+    if not re.match('1[3578][0-9]{9}', mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg="手机格式错误")
+
+    #3.0 查询用户是否存在
+    try:
+        user = User.query.filter(User.mobile == mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+    # 用户不存在
+    if not user:
+        return jsonify(errno=RET.NODATA, errmsg="用户不存在")
+
+    #3.1 验证密码是否一致
+    if not user.check_passowrd(password):
+        # 3.2 不一致： 提示密码填写错误
+        return jsonify(errno=RET.DATAERR, errmsg="密码填写错误")
+
+    #3.3 一致：记录用户登录信息
+    session["user_id"] = user.id
+    session["nick_name"] = user.mobile
+    session['mobile'] = user.mobile
+
+    # 更新用户最后一次登录时间
+    user.last_login = datetime.now()
+    # 修改了用户对象属性，要想更新到数据库必须commit
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+
+    #4.登录成功
+    return jsonify(errno=RET.OK, errmsg="登录成功")
+
+
 # 127.0.0.1:5000/passport/register
 @passport_bp.route('/register', methods=['POST'])
 def register():
