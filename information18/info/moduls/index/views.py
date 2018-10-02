@@ -3,7 +3,7 @@ from flask import current_app, render_template, session, jsonify
 from info.utits.response_code import RET
 from . import index_bp
 from info import redis_store
-from info.models import User, News
+from info.models import User, News, Category
 from info import constants
 
 
@@ -52,9 +52,22 @@ def hello_world():
         # 将字典装到一个列表中
         news_rank_dict_list.append(news_dict)
 
+
+    # -----------获取新闻分类数据----------
+    categories = Category.query.all()
+    # 定义列表保存分类数据
+    categories_dicts = []
+
+    for category in categories if categories else []:
+        # 拼接内容
+        Category_dict = category.to_dict()
+        categories_dicts.append(Category_dict)
+
+
     data = {
         "user_info": user.to_dict() if user else None,
-        "news_rank_list": news_rank_dict_list
+        "news_rank_list": news_rank_dict_list,
+        "categories": categories_dicts
     }
     # 返回模板文件
     return render_template("news/index.html",data=data)
