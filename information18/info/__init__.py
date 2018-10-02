@@ -1,13 +1,14 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, session
+from flask import Flask, session,g
+from flask import render_template
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 # 帮助我们将flask中的session存储位置进行调整（内存--redis）
 from flask_session import Session
 from config import config_dict
-from info.utits.common import do_index_class
+from info.utits.common import do_index_class, user_login_data
 
 # 没有app对象暂时不初始化，只是声明
 db = SQLAlchemy()
@@ -107,5 +108,15 @@ def create_app(config_name):
     from info.moduls.news import news_blu
     app.register_blueprint(news_blu)
 
+    @app.errorhandler(404)
+    @user_login_data
+    def page_not_found(_):
+        user = g.user
+        data = {"user_info": user.to_dict() if user else None}
+        return render_template('news/404.html', data=data)
+
+
     # 返回app
     return app
+
+
