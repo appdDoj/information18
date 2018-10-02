@@ -1,8 +1,9 @@
 import logging
-from flask import current_app, render_template, session, jsonify
+from flask import current_app, render_template, session, jsonify,g
 from flask import request
 
 from info.utits.response_code import RET
+from info.utits.common import user_login_data
 from . import index_bp
 from info import redis_store
 from info.models import User, News, Category
@@ -11,6 +12,7 @@ from info import constants
 
 #2. 使用蓝图
 @index_bp.route('/')
+@user_login_data
 def hello_world():
     # -------------------用户数据查询------------------
     #1.获取用户id-
@@ -67,7 +69,7 @@ def hello_world():
 
 
     data = {
-        "user_info": user.to_dict() if user else None,
+        "user_info": g.user.to_dict() if g.user else None,
         "news_rank_list": news_rank_dict_list,
         "categories": categories_dicts
     }
@@ -88,6 +90,7 @@ def favicon():
 
 
 @index_bp.route('/newslist')
+
 def get_news_list():
     """
     获取指定分类的新闻列表

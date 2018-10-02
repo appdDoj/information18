@@ -28,11 +28,12 @@
 
     <div class="conter_con">
         <div class="detail_con fl">
-            <h3>恒指创收盘历史新高 沪指创逾2个月来新高 房地产板块集体爆发</h3>
+            <h3>{{ data.news.title }}</h3>
             <div class="detail_about clearfix">
-                <span class="time_souce fl">2018-01-16 14:38 来源: 商务部</span>
-                <span class="comment fr">3</span>
+                <span class="time_souce fl">{{ data.news.create_time }} 来源: {{ data.news.source }}</span>
+                <span class="comment fr">{{ data.news.comments_count }}</span>
             </div>
+            {{ data.news.content | safe }}
 
             <p class="summary">
                 摘要：昨天终结十一连阳之后，今天A股迅速重拾涨势，沪指收涨0.8%创逾两个月新高。房地产板块集体走强，尾盘更是放量大涨，万科A一度逼近涨停，最终收涨8.4%，股价创历史新高。
@@ -59,22 +60,26 @@
         <a href="javascript:;" class="collection block-center">收藏</a>
         <a href="javascript:;" class="collected block-center" style="display: none"><span class="out">已收藏</span><span class="over">取消收藏</span></a>
 
-
-        <div class="comment_form_logout">
-            登录发表你的评论
-        </div>
-
-        <form action="" class="comment_form">
+    {% if data.user_info %}
+        <form action="" class="comment_form" data-newsid="{{ data.news.id }}">
             <div class="person_pic">
-                <img src="../../static/news/images/cat.jpg" alt="用户图标">
+                <img src="{% if data.user_info.avatar_url %}
+                    {{ data.user_info.avatar_url }}
+                {% else %}
+                    ../../static/news/images/person01.png
+                {% endif %}" alt="用户图标">
             </div>
             <textarea placeholder="请发表您的评论" class="comment_input"></textarea>
             <input type="submit" name="" value="评 论" class="comment_sub">
         </form>
-
+    {% else %}
+        <div class="comment_form_logout">
+            登录发表你的评论
+        </div>
+    {% endif %}
 
         <div class="comment_count">
-            4条评论
+            {{ data.news.comments_count }}条评论
         </div>
 
         <div class="comment_list_con">
