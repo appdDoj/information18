@@ -22,6 +22,7 @@ $(function () {
             // 重置分页参数
             cur_page = 1
             total_page = 1
+            data_querying = false
             updateNewsData()
         }
     })
