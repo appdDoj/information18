@@ -1,9 +1,6 @@
 import logging
-from flask import current_app, render_template, session, jsonify,g
-from flask import request
-
+from flask import current_app, render_template, session, jsonify
 from info.utits.response_code import RET
-from info.utits.common import user_login_data
 from . import index_bp
 from info import redis_store
 from info.models import User, News, Category
@@ -12,8 +9,8 @@ from info import constants
 
 #2. 使用蓝图
 @index_bp.route('/')
-@user_login_data
 def hello_world():
+
     # -------------------用户数据查询------------------
     #1.获取用户id-
     user_id = session.get("user_id")
@@ -56,22 +53,23 @@ def hello_world():
         # 将字典装到一个列表中
         news_rank_dict_list.append(news_dict)
 
+    # -------------------新闻分类数据查询------------------
+    try:
+        categories = Category.query.all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询分类数据异常")
 
-    # -----------获取新闻分类数据----------
-    categories = Category.query.all()
-    # 定义列表保存分类数据
-    categories_dicts = []
-
+    # 分类的对象列表转换成字典列表
+    category_dict_list = []
     for category in categories if categories else []:
-        # 拼接内容
-        Category_dict = category.to_dict()
-        categories_dicts.append(Category_dict)
-
+        # 将分类对象转换成字典
+        category_dict_list.append(category.to_dict())
 
     data = {
-        "user_info": g.user.to_dict() if g.user else None,
+        "user_info": user.to_dict() if user else None,
         "news_rank_list": news_rank_dict_list,
-        "categories": categories_dicts
+        "categories": category_dict_list
     }
     # 返回模板文件
     return render_template("news/index.html",data=data)
@@ -87,53 +85,3 @@ def favicon():
     # 内部发送静态文件函数，将static文件夹下的静态文件发送到浏览器
     """
     return current_app.send_static_file('news/favicon.ico')
-
-
-@index_bp.route('/newslist')
-
-def get_news_list():
-    """
-    获取指定分类的新闻列表
-    1. 获取参数
-    2. 校验参数
-    3. 查询数据
-    4. 返回数据
-    :return:
-    """
-
-    # 1. 获取参数
-    args_dict = request.args
-    page = args_dict.get("p", '1')
-    per_page = args_dict.get("per_page", constants.HOME_PAGE_MAX_NEWS)
-    category_id = args_dict.get("cid", '1')
-
-    # 2. 校验参数
-    try:
-        page = int(page)
-        per_page = int(per_page)
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.PARAMERR, errmsg="参数错误")
-
-    # 3. 查询数据并分页
-    filters = []
-    # 如果分类id不为1，那么添加分类id的过滤
-    if category_id != "1":
-        filters.append(News.category_id == category_id)
-    try:
-        paginate = News.query.filter(*filters).order_by(News.create_time.desc()).paginate(page, per_page, False)
-        # 获取查询出来的数据
-        items = paginate.items
-        # 获取到总页数
-        total_page = paginate.pages
-        current_page = paginate.page
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="数据查询失败")
-
-    news_li = []
-    for news in items:
-        news_li.append(news.to_basic_dict())
-
-    # 4. 返回数据
-    return jsonify(errno=RET.OK, errmsg="OK", totalPage=total_page, currentPage=current_page, newsList=news_li, cid=category_id)

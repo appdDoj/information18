@@ -15,15 +15,15 @@ class Config(object):
     # 在数据库会话对象结束的时候自动帮助提交信息到数据库
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
-    #redis数据库配置信息
+    # redis数据库配置信息
     REDIS_HOST = "127.0.0.1"
     REDIS_PORT = 6379
     # 选择第9个数据库进行存储
     REDIS_NUM = 8
 
-    #设置加密字符串
+    # 设置加密字符串
     SECRET_KEY = "ASLKDJALKSJDALSDJALKSDJASLKDJ98ADU9"
-    #利用flask-session拓展包，将flask中的session存储位置从内存调整到redis的配置信息
+    # 利用flask-session拓展包，将flask中的session存储位置从内存调整到redis的配置信息
     # 存储到那种数据库的类型：redis
     SESSION_TYPE = 'redis'
     # 初始化一个redis实例对象给他赋值

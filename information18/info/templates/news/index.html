@@ -14,9 +14,10 @@
         <div class="header">
             <a href="#" class="logo fl"><img src="../../static/news/images/logo.png" alt="logo"></a>
             <ul class="menu fl">
-                {% for category in data.categories %}
-                    <li class="{% if loop.index0 == 0 %}active{% endif %}" data-cid="{{ category.id }}"><a href="javascript:;">{{ category.name }}</a></li>
-                {% endfor %}
+
+                     {% for category in data.categories %}
+                        <li class="{% if loop.index0 == 0 %}active{% endif %}" data-cid="{{ category.id }}"><a href="javascript:;">{{ category.name }}</a></li>
+                     {% endfor %}
 {#                <li class="active" data-cid="0"><a href="javascript:;">最新</a></li>#}
 {#                <li data-cid="1"><a href="javascript:;">股市</a></li>#}
 {#                <li data-cid="2"><a href="javascript:;">债市</a></li>#}
@@ -46,7 +47,7 @@
 
         </div>
     </div>
-
+    
     <div class="conter_con">
         <ul class="list_con fl">
             <li>
@@ -99,13 +100,13 @@
         <div class="rank_con fr">
             <div class="rank_title">
                 <h3>点击排行</h3>
-            </div><ul class="rank_list">
+            </div>
+
+            <ul class="rank_list">
                 {% for news_dict in data.news_rank_list %}
-                    <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="/news/{{ news_dict.id }}">{{ news_dict.title }}</a></li>
+                    <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="#">{{ news_dict.title }}</a></li>
                 {% endfor %}
             </ul>
-
-
 
 {#            <ul class="rank_list">#}
 {#                <li><span class="first">1</span><a href="#">势如破竹！人民币再度连闯四道关口 在岸、离岸双双升破6.42</a></li>#}
@@ -119,7 +120,7 @@
 
         </div>
     </div>
-    <div class="footer">
+    <div class="footer">        
         <div class="footer_links">
             <a href="">关于我们</a>
             <span>|</span>
@@ -134,7 +135,7 @@
 电话：010-****888    京ICP备*******8号
         </p>
     </div>
-
+    
     <!-- 登录表单 -->
     <form class="login_form_con">
         <div class="login_form">

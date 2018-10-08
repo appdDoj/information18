@@ -46,14 +46,14 @@ def login():
     param_dict = request.json
     mobile = param_dict.get("mobile", "")
     password = param_dict.get("password", "")
-    #2.1 非空判断
+    # 2.1 非空判断
     if not all([mobile, password]):
         return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
-    #2.2 手机号码正则校验
+    # 2.2 手机号码正则校验
     if not re.match('1[3578][0-9]{9}', mobile):
         return jsonify(errno=RET.PARAMERR, errmsg="手机格式错误")
 
-    #3.0 查询用户是否存在
+    # 3.0 查询用户是否存在
     try:
         user = User.query.filter(User.mobile == mobile).first()
     except Exception as e:
@@ -63,12 +63,12 @@ def login():
     if not user:
         return jsonify(errno=RET.NODATA, errmsg="用户不存在")
 
-    #3.1 验证密码是否一致
+    # 3.1 验证密码是否一致
     if not user.check_passowrd(password):
         # 3.2 不一致： 提示密码填写错误
         return jsonify(errno=RET.DATAERR, errmsg="密码填写错误")
 
-    #3.3 一致：记录用户登录信息
+    # 3.3 一致：记录用户登录信息
     session["user_id"] = user.id
     session["nick_name"] = user.mobile
     session['mobile'] = user.mobile
@@ -82,7 +82,7 @@ def login():
         current_app.logger.error(e)
         db.session.rollback()
 
-    #4.登录成功
+    # 4.登录成功
     return jsonify(errno=RET.OK, errmsg="登录成功")
 
 
@@ -168,7 +168,7 @@ def register():
     return jsonify(errno=RET.OK, errmsg="注册成功")
 
 
-#2.使用蓝图
+# 2.使用蓝图
 # 127.0.0.1:5000/passport/image_code?code_id=uuid编号  (GET)
 @passport_bp.route('/image_code')
 def get_image_code():
@@ -212,7 +212,7 @@ def get_image_code():
     return response
 
 
-#127.0.0.1:5000/passport/sms_code
+# 127.0.0.1:5000/passport/sms_code
 @passport_bp.route('/sms_code', methods=['POST'])
 def send_sms_code():
     """点击发送短信验证码后端接口"""
@@ -296,17 +296,18 @@ def send_sms_code():
     # 生成6位的短信验证码值
     sms_code = random.randint(0, 999999)
     sms_code = "%06d" % sms_code
+    print(sms_code)
 
-    try:
-        ccp = CCP()
-        result = ccp.send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], 1)
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
-
-    # 发送短信验证失败
-    if result != 0:
-        return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
+    # try:
+    #     ccp = CCP()
+    #     result = ccp.send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], 1)
+    # except Exception as e:
+    #     current_app.logger.error(e)
+    #     return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
+    #
+    # # 发送短信验证失败
+    # if result != 0:
+    #     return jsonify(errno=RET.THIRDERR, errmsg="云通讯发送短信验证码失败")
 
     #3.3 将生成6位的短信验证码值 存储到redis数据库
     try:
