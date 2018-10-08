@@ -1,7 +1,8 @@
 from flask import current_app, jsonify
 from flask import g
+from flask import request
 from flask import session
-from info import constants
+from info import constants, db
 from info.models import User, News
 from info.utits.common import user_login_data
 from info.utits.response_code import RET
@@ -9,7 +10,69 @@ from . import news_bp
 from flask import render_template
 
 
-#http://127.0.0.1:5000/news/1
+@news_bp.route('/news_collect', methods=['POST'])
+@user_login_data
+def news_collect():
+    """用户点击收藏、取消收藏后端接口实现"""
+    """
+    1.获取参数
+        1.1 news_id：新闻id, action:表示收藏和取消收藏的行为（'collect', 'cancel_collect'）
+    2.校验参数
+        2.1 非空判断
+        2.2 action必须是在['collect', 'cancel_collect']
+    3.逻辑处理
+        3.0 根据news_id查询该新闻
+        3.1 action是collect表示收藏: 将新闻添加到user.collection_news列表中
+        3.2 action是cancel_collect表示取消收藏: 将新闻从user.collection_news列表中移除
+    4.返回值
+    """
+    # 获取当前用户
+    user = g.user
+    # 1.1 news_id：新闻id, action:表示收藏和取消收藏的行为（'collect', 'cancel_collect'）
+    param_dict = request.json
+    news_id = param_dict.get("news_id")
+    action = param_dict.get("action")
+
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    # 2.1 非空判断
+    if not all([action, news_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 action必须是在['collect', 'cancel_collect']
+    if action not in ['collect', 'cancel_collect']:
+        return jsonify(errno=RET.PARAMERR, errmsg="参数内容错误")
+
+    # 3.0 根据news_id查询该新闻
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻数据异常")
+
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="没有改新闻")
+
+    # 3.1 action是collect表示收藏: 将新闻添加到user.collection_news列表中
+    if action == "collect":
+        # 收藏
+        user.collection_news.append(news)
+    # 3.2 action是cancel_collect表示取消收藏: 将新闻从user.collection_news列表中移除
+    else:
+        # 取消收藏
+        user.collection_news.remove(news)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻数据到收藏列表异常")
+
+    # 4.返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
+
+
+# http://127.0.0.1:5000/news/1
 @news_bp.route('/<int:news_id>')
 @user_login_data
 def get_detail_news(news_id):
@@ -41,7 +104,6 @@ def get_detail_news(news_id):
 
     # 使用装饰器获取当前用户信息
     user = g.user
-
 
     # -------------------点击排行新闻数据查询------------------
     try:
