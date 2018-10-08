@@ -102,5 +102,10 @@ def create_app(config_name):
     # 注册 登录、注册模块蓝图
     from info.moduls.passport import passport_bp
     app.register_blueprint(passport_bp)
+
+    # 注册新闻详情模块的蓝图
+    from info.moduls.news import news_bp
+    app.register_blueprint(news_bp)
+
     # 返回app
     return app

@@ -1,5 +1,7 @@
 from flask import Blueprint
 
-news_blu = Blueprint("news", __name__, url_prefix='/news')
+#1.创建蓝图对象
+news_bp = Blueprint("news", __name__, url_prefix='/news')
 
-from . import views
+#3.导入views文件
+from .views import *
