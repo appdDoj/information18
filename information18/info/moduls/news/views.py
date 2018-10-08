@@ -1,8 +1,9 @@
 from flask import current_app, jsonify
+from flask import g
 from flask import session
-
 from info import constants
 from info.models import User, News
+from info.utits.common import user_login_data
 from info.utits.response_code import RET
 from . import news_bp
 from flask import render_template
@@ -10,19 +11,22 @@ from flask import render_template
 
 #http://127.0.0.1:5000/news/1
 @news_bp.route('/<int:news_id>')
+@user_login_data
 def get_detail_news(news_id):
     """展示新闻详情页面"""
     # -------------------用户数据查询------------------
-    # 1.获取用户id-
-    user_id = session.get("user_id")
-    # 用户id有值才去查询用户数据
-    user = None  # type: User
-    if user_id:
-        try:
-            user = User.query.get(user_id)
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+    # # 1.获取用户id-
+    # user_id = session.get("user_id")
+    # # 用户id有值才去查询用户数据
+    # user = None  # type: User
+    # if user_id:
+    #     try:
+    #         user = User.query.get(user_id)
+    #     except Exception as e:
+    #         current_app.logger.error(e)
+    #         return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+
+    user = g.user
 
     """
     if user:

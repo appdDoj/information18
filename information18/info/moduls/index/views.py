@@ -1,5 +1,6 @@
 import logging
 from flask import current_app, render_template, session, jsonify
+from flask import g
 from flask import request
 
 from info.utits.response_code import RET
@@ -7,6 +8,7 @@ from . import index_bp
 from info import redis_store
 from info.models import User, News, Category
 from info import constants
+from info.utits.common import user_login_data
 
 
 @index_bp.route('/news_list')
@@ -84,20 +86,23 @@ def get_news_list():
 
 #2. 使用蓝图
 @index_bp.route('/')
-def hello_world():
+@user_login_data
+def index():
 
     # -------------------用户数据查询------------------
     #1.获取用户id-
-    user_id = session.get("user_id")
-    # 用户id有值才去查询用户数据
-    user = None # type: User
-    if user_id:
-        try:
-            user = User.query.get(user_id)
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+    # user_id = session.get("user_id")
+    # # 用户id有值才去查询用户数据
+    # user = None # type: User
+    # if user_id:
+    #     try:
+    #         user = User.query.get(user_id)
+    #     except Exception as e:
+    #         current_app.logger.error(e)
+    #         return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
 
+    # 使用装饰器帮助获取当前用户登录的信息
+    user = g.user
     """
     if user:
         # user：对象 --> 字典
@@ -138,7 +143,7 @@ def hello_world():
     # 分类的对象列表转换成字典列表
     category_dict_list = []
     for category in categories if categories else []:
-        # 将分类对象转换成字典
+        # 将分类对象转换成字典s
         category_dict_list.append(category.to_dict())
 
     data = {
