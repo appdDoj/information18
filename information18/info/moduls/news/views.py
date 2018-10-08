@@ -25,22 +25,24 @@ def get_detail_news(news_id):
     #     except Exception as e:
     #         current_app.logger.error(e)
     #         return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+    """
+        if user:
+            # user：对象 --> 字典
+            user_info = user.to_dict()
 
+        #数据格式：
+        data= {
+            "user_info"： {"id": self.id}
+        }
+
+        #在模板中获取方法
+        data.user_info.nick_name: 获取用户昵称
+        """
+
+    # 使用装饰器获取当前用户信息
     user = g.user
 
-    """
-    if user:
-        # user：对象 --> 字典
-        user_info = user.to_dict()
 
-    #数据格式：
-    data= {
-        "user_info"： {"id": self.id}
-    }
-
-    #在模板中获取方法
-    data.user_info.nick_name: 获取用户昵称
-    """
     # -------------------点击排行新闻数据查询------------------
     try:
         news_rank_list = News.query.order_by(News.clicks.desc()).limit(constants.CLICK_RANK_MAX_NEWS).all()

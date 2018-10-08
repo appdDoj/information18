@@ -59,19 +59,24 @@
 
             {% endblock %}
 
-            <div class="rank_title">
-                <h3>点击排行</h3>
-            </div>
+            {% block rankBlock %}
+                <div class="rank_title">
+                    <h3>点击排行</h3>
+                </div>
 
-            <ul class="rank_list">
-                {% for news_dict in data.news_rank_list %}
-                    <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="/news/{{ news_dict.id }}">{{ news_dict.title }}</a></li>
-                {% endfor %}
-            </ul>
+                <ul class="rank_list">
+                    {% for news_dict in data.news_rank_list %}
+                        <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="/news/{{ news_dict.id }}">{{ news_dict.title }}</a></li>
+                    {% endfor %}
+                </ul>
+
+            {% endblock %}
 
         </div>
     </div>
-    <div class="footer">
+
+    {% block footerBlock %}
+        <div class="footer">
         <div class="footer_links">
             <a href="">关于我们</a>
             <span>|</span>
@@ -86,6 +91,7 @@
 电话：010-****888    京ICP备*******8号
         </p>
     </div>
+    {% endblock %}
 
     <!-- 登录表单 -->
     <form class="login_form_con">
