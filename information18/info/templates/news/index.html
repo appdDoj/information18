@@ -18,12 +18,6 @@
                      {% for category in data.categories %}
                         <li class="{% if loop.index0 == 0 %}active{% endif %}" data-cid="{{ category.id }}"><a href="javascript:;">{{ category.name }}</a></li>
                      {% endfor %}
-{#                <li class="active" data-cid="0"><a href="javascript:;">最新</a></li>#}
-{#                <li data-cid="1"><a href="javascript:;">股市</a></li>#}
-{#                <li data-cid="2"><a href="javascript:;">债市</a></li>#}
-{#                <li data-cid="3"><a href="javascript:;">商品</a></li>#}
-{#                <li data-cid="4"><a href="javascript:;">外汇</a></li>#}
-{#                <li data-cid="5"><a href="javascript:;">公司</a></li>#}
             </ul>
 
             {% if data.user_info %}
@@ -47,8 +41,9 @@
 
         </div>
     </div>
-    
+
     <div class="conter_con">
+
         <ul class="list_con fl">
             <li>
                 <a href="#" class="news_pic fl"><img src="../../static/news/images/news_pic.jpg"></a>
@@ -97,6 +92,7 @@
                 </div>
             </li>
         </ul>
+
         <div class="rank_con fr">
             <div class="rank_title">
                 <h3>点击排行</h3>
