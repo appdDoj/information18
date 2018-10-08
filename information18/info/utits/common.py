@@ -14,9 +14,13 @@ def do_index_class(index):
     else:
         return ""
 
+import functools
+
 
 def user_login_data(view_func):
     """用户登录成功的装饰器"""
+
+    @functools.wraps(view_func)
     def wrapper(*args, **kwargs):
         # 1 装饰器要实现的功能
         # 1.获取用户id
