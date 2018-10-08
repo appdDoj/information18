@@ -70,10 +70,21 @@ def get_detail_news(news_id):
     # 新闻对象转字典
     news_dict = news.to_dict()
 
+    # -------------------查询当前用户是否收藏该新闻------------------
+    # is_collected = True表示收藏 反之
+    is_collected = False
+
+    # 用户已经登录
+    if user:
+        if news in user.collection_news:
+            # 表示该用户已经收藏该新闻
+            is_collected = True
+
     data = {
         "user_info": user.to_dict() if user else None,
         "news_rank_list": news_rank_dict_list,
-        "news": news_dict
+        "news": news_dict,
+        "is_collected": is_collected
     }
 
     return render_template("news/detail.html", data=data)
