@@ -11,6 +11,7 @@ from flask import render_template
 
 
 @news_bp.route('/news_comment', methods=['POST'])
+@user_login_data
 def news_comment():
     """发布评论接口（主评论，子评论）"""
     """
@@ -68,7 +69,7 @@ def news_comment():
         return jsonify(errno=RET.DBERR, errmsg="保存评论对象异常")
 
     #4.返回值
-    return jsonify(errno=RET.OK, errmsg="评论成功")
+    return jsonify(errno=RET.OK, errmsg="评论成功", data=comment_obj.to_dict())
 
 
 @news_bp.route('/news_collect', methods=['POST'])
