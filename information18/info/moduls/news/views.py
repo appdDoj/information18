@@ -3,11 +3,72 @@ from flask import g
 from flask import request
 from flask import session
 from info import constants, db
-from info.models import User, News
+from info.models import User, News, Comment
 from info.utits.common import user_login_data
 from info.utits.response_code import RET
 from . import news_bp
 from flask import render_template
+
+
+@news_bp.route('/news_comment', methods=['POST'])
+def news_comment():
+    """发布评论接口（主评论，子评论）"""
+    """
+    1.获取参数
+        1.1 comment_str:评论内容，news_id:新闻id， parent_id：父评论id（非必传参数）
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 根据news_id查询新闻是否存在
+        3.1 parent_id没有值：发布主评论
+        3.2 parent_id有值：发布子评论
+    4.返回值
+    """
+    #1.1 comment_str:评论内容，news_id:新闻id， parent_id：父评论id（非必传参数）
+    params_dict = request.json
+    comment_str = params_dict.get("comment")
+    news_id = params_dict.get("news_id")
+    parent_id = params_dict.get("parent_id")
+    # 获取用户对象
+    user = g.user
+
+    #2.1 非空判断
+    if not all([news_id, comment_str]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    #2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 3.0 根据news_id查询新闻是否存在
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻对象异常")
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻不存在")
+
+    # 3.1 parent_id没有值：发布主评论
+    comment_obj = Comment()
+    comment_obj.user_id = user.id
+    comment_obj.news_id = news_id
+    comment_obj.content = comment_str
+    # 3.2 parent_id有值：发布子评论
+    if parent_id:
+        comment_obj.parent_id = parent_id
+
+    # 3.3 保存到数据库
+    try:
+        db.session.add(comment_obj)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存评论对象异常")
+
+    #4.返回值
+    return jsonify(errno=RET.OK, errmsg="评论成功")
 
 
 @news_bp.route('/news_collect', methods=['POST'])
@@ -68,11 +129,11 @@ def news_collect():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg="保存新闻数据到收藏列表异常")
 
-    # 4.返回值
+    #4.返回值
     return jsonify(errno=RET.OK, errmsg="OK")
 
 
-# http://127.0.0.1:5000/news/1
+#http://127.0.0.1:5000/news/1
 @news_bp.route('/<int:news_id>')
 @user_login_data
 def get_detail_news(news_id):
@@ -104,6 +165,7 @@ def get_detail_news(news_id):
 
     # 使用装饰器获取当前用户信息
     user = g.user
+
 
     # -------------------点击排行新闻数据查询------------------
     try:
