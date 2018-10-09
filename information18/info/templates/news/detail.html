@@ -17,34 +17,41 @@
             <span class="time_souce fl">{{ data.news.create_time }} 来源: {{ data.news.source }}</span>
             <span class="comment fr">{{ data.news.comments_count }}</span>
         </div>
-        {# safe表明内容是安全的需要解析输出       #}
+        {# safe表明内容是安全的需要解析输出 #}
         {{ data.news.content | safe }}
 
-{#        <a href="javascript:;" class="collection block-center">收藏</a>#}
-{#        <a href="javascript:;" class="collected block-center" style="display: none"><span class="out">已收藏</span><span class="over">取消收藏</span></a>#}
         <a href="javascript:;" class="collected block-center" data-newid="{{ data.news.id }}" style="display: {% if data.is_collected %} block
         {% else %} none {% endif %};"><span class="out">已收藏</span><span class="over">取消收藏</span></a>
         <a href="javascript:;" class="collection block-center" data-newid="{{ data.news.id }}" style="display: {% if data.is_collected %} none
                 {% else %} block {% endif %};">收藏</a>
 
-        <div class="comment_form_logout">
-            登录发表你的评论
-        </div>
 
-        <form action="" class="comment_form">
-            <div class="person_pic">
-                <img src="../../static/news/images/cat.jpg" alt="用户图标">
+        {% if data.user_info %}
+             <form action="" class="comment_form" data-newsid="{{ data.news.id }}">
+                <div class="person_pic">
+                     <img src="{% if data.user_info.avatar_url %}  {{ data.user_info.avatar_url }} {% else %}../../static/news/images/cat.jpg {% endif %}" alt=“用户图标”>
+                </div>
+                <textarea placeholder="请发表您的评论" class="comment_input"></textarea>
+                <input type="submit" name="" value="评 论" class="comment_sub">
+            </form>
+        {% else %}
+            <div class="comment_form_logout">
+                登录发表你的评论
             </div>
-            <textarea placeholder="请发表您的评论" class="comment_input"></textarea>
-            <input type="submit" name="" value="评 论" class="comment_sub">
-        </form>
+        {% endif %}
+
+
+
+
 
 
         <div class="comment_count">
             4条评论
         </div>
 
+        {# 评论列表容器       #}
         <div class="comment_list_con">
+
             <div class="comment_list">
                 <div class="person_pic fl">
                     <img src="../../static/news/images/worm.jpg" alt="用户图标">
@@ -122,6 +129,7 @@
                     <input type="reset" name="" value="取消" class="reply_cancel fr">
                 </from>
             </div>
+
         </div>
 
 
