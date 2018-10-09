@@ -205,11 +205,27 @@ def get_detail_news(news_id):
             # 表示该用户已经收藏该新闻
             is_collected = True
 
+    # -------------------查询当前新闻评论列表------------------
+    # 获取评论对象列表：[comment对象1,comment对象2,....]
+    try:
+        comments = Comment.query.filter(Comment.news_id == news_id)\
+            .order_by(Comment.create_time.desc()).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询评论对象异常")
+    # 评论对象列表转字典列表
+    comment_dict_list = []
+    for comment in comments if comments else []:
+        comment_dict_list.append(comment.to_dict())
+
+
+    # 组织返回数据
     data = {
         "user_info": user.to_dict() if user else None,
         "news_rank_list": news_rank_dict_list,
         "news": news_dict,
-        "is_collected": is_collected
+        "is_collected": is_collected,
+        "comments": comment_dict_list
     }
 
     return render_template("news/detail.html", data=data)
