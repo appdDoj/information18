@@ -67,7 +67,21 @@
                         </div>
                     {% endif %}
                     <div class="comment_time fl">{{ comment.create_time }}</div>
-<a href="javascript:;" class="comment_up {% if comment.is_like %}has_comment_up{% endif %} fr" data-commentid="{{ comment.id }}" data-newsid="{{ data.news.id }}">赞</a>                    <a href="javascript:;" class="comment_reply fr">回复</a>
+
+                    {# 点赞按钮的逻辑 #}
+                    <a href="javascript:;" class="comment_up
+                    {% if comment.is_like %}
+                        has_comment_up
+                    {% endif %} fr"
+                       data-commentid="{{ comment.id }}"
+                       data-likecount="{{ comment.like_count }}"
+                       data-newsid="{{ data.news.id }}">
+                    {% if comment.like_count > 0 %}
+                        {{ comment.like_count }}
+                    {% else %}
+                        赞
+                    {% endif %}</a>
+
                     <form class="reply_form fl" data-commentid="{{ comment.id }}" data-newsid="{{ data.news.id }}">
                         <textarea class="reply_input"></textarea>
                         <input type="button" value="回复" class="reply_sub fr">
