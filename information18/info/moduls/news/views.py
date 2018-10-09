@@ -26,21 +26,21 @@ def comment_like():
         3.2 action==remove表示取消点赞：查询commentlike模型对象，如果存在，再删除这种点赞关系
     4.返回值
     """
-    # 1.1 用户对象 新闻id comment_id评论的id，action:(点赞、取消点赞)
+    #1.1 用户对象 新闻id comment_id评论的id，action:(点赞、取消点赞)
     params_dict = request.json
     comment_id = params_dict.get("comment_id")
     action = params_dict.get("action")
     user = g.user
 
-    # 2.1 非空判断
+    #2.1 非空判断
     if not all([comment_id, action]):
         return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
 
-    # 2.2 用户是否登录判断
+    #2.2 用户是否登录判断
     if not user:
         return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
 
-    # 2.3 action in ["add", "remove"]
+    #2.3 action in ["add", "remove"]
     if action not in ["add", "remove"]:
         return jsonify(errno=RET.PARAMERR, errmsg="action参数错误")
 
@@ -53,41 +53,43 @@ def comment_like():
     if not comment:
         return jsonify(errno=RET.NODATA, errmsg="评论不存在")
 
-    # 3.1 action==add表示点赞：查询commentlike模型对象，如果不存在，再创建commentlike
-    if action == "add":
-        # 点赞
-        try:
-            commentlike = CommentLike.query.filter(CommentLike.comment_id == comment_id,
-                                                   CommentLike.user_id == user.id).first()
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.DBERR, errmsg="查询点赞评论模型异常")
-        # 当前用户没有对当前评论点过赞
-        if not commentlike:
-            # 创建CommentLike模型对象给其属性赋值
-            commentlike = CommentLike()
-            CommentLike.user_id = user.id
-            CommentLike.comment_id = comment_id
+    # 当前用户登录成功
+    if user:
+        # 3.1 action==add表示点赞：查询commentlike模型对象，如果不存在，再创建commentlike
+        if action == "add":
+            # 点赞
+            try:
+                commentlike = CommentLike.query.filter(CommentLike.comment_id == comment_id,
+                                                       CommentLike.user_id == user.id).first()
+            except Exception as e:
+                current_app.logger.error(e)
+                return jsonify(errno=RET.DBERR, errmsg="查询点赞评论模型异常")
+            # 当前用户没有对当前评论点过赞
+            if not commentlike:
+                # 创建CommentLike模型对象给其属性赋值
+                commentlike_obj = CommentLike()
+                commentlike_obj.user_id = user.id
+                commentlike_obj.comment_id = comment_id
 
-            # 添加到数据库
-            db.session.add(commentlike)
-            # 评论的总点赞数量进行累加
-            comment.like_count += 1
-    # 3.2 action==remove表示取消点赞：查询commentlike模型对象，如果存在，再删除这种点赞关系
-    else:
-        # 取消点赞
-        try:
-            commentlike = CommentLike.query.filter(CommentLike.comment_id == comment_id,
-                                                   CommentLike.user_id == user.id).first()
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.DBERR, errmsg="查询点赞评论模型异常")
-        # 当前用户对当前评论点过赞的情况才能取消点赞
-        if commentlike:
-            # 从数据库删除第三张表维护的关系，即表示：取消点赞
-            db.session.delete(commentlike)
-            # 评论的总点赞数量进行减一
-            comment.like_count -= 1
+                # 添加到数据库
+                db.session.add(commentlike_obj)
+                # 评论的总点赞数量进行累加
+                comment.like_count += 1
+        # 3.2 action==remove表示取消点赞：查询commentlike模型对象，如果存在，再删除这种点赞关系
+        else:
+            # 取消点赞
+            try:
+                commentlike = CommentLike.query.filter(CommentLike.comment_id == comment_id,
+                                                       CommentLike.user_id == user.id).first()
+            except Exception as e:
+                current_app.logger.error(e)
+                return jsonify(errno=RET.DBERR, errmsg="查询点赞评论模型异常")
+            # 当前用户对当前评论点过赞的情况才能取消点赞
+            if commentlike:
+                # 从数据库删除第三张表维护的关系，即表示：取消点赞
+                db.session.delete(commentlike)
+                # 评论的总点赞数量进行减一
+                comment.like_count -= 1
 
     # 将点赞、取消点赞的修改提交回数据库
     try:
@@ -98,7 +100,7 @@ def comment_like():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg="保存评论点赞模型对象异常")
 
-    # 4.返回值
+    #4.返回值
     return jsonify(errno=RET.OK, errmsg="OK")
 
 
@@ -117,7 +119,7 @@ def news_comment():
         3.2 parent_id有值：发布子评论
     4.返回值
     """
-    # 1.1 comment_str:评论内容，news_id:新闻id， parent_id：父评论id（非必传参数）
+    #1.1 comment_str:评论内容，news_id:新闻id， parent_id：父评论id（非必传参数）
     params_dict = request.json
     comment_str = params_dict.get("comment")
     news_id = params_dict.get("news_id")
@@ -125,11 +127,11 @@ def news_comment():
     # 获取用户对象
     user = g.user
 
-    # 2.1 非空判断
+    #2.1 非空判断
     if not all([news_id, comment_str]):
         return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
 
-    # 2.2 用户是否登录判断
+    #2.2 用户是否登录判断
     if not user:
         return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
 
@@ -160,7 +162,7 @@ def news_comment():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg="保存评论对象异常")
 
-    # 4.返回值
+    #4.返回值
     return jsonify(errno=RET.OK, errmsg="评论成功", data=comment_obj.to_dict())
 
 
@@ -222,11 +224,11 @@ def news_collect():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg="保存新闻数据到收藏列表异常")
 
-    # 4.返回值
+    #4.返回值
     return jsonify(errno=RET.OK, errmsg="OK")
 
 
-# http://127.0.0.1:5000/news/1
+#http://127.0.0.1:5000/news/1
 @news_bp.route('/<int:news_id>')
 @user_login_data
 def get_detail_news(news_id):
@@ -258,6 +260,7 @@ def get_detail_news(news_id):
 
     # 使用装饰器获取当前用户信息
     user = g.user
+
 
     # -------------------点击排行新闻数据查询------------------
     try:
@@ -299,7 +302,7 @@ def get_detail_news(news_id):
     # -------------------查询当前新闻评论列表------------------
     # 获取评论对象列表：[comment对象1,comment对象2,....]
     try:
-        comments = Comment.query.filter(Comment.news_id == news_id) \
+        comments = Comment.query.filter(Comment.news_id == news_id)\
             .order_by(Comment.create_time.desc()).all()
     except Exception as e:
         current_app.logger.error(e)
