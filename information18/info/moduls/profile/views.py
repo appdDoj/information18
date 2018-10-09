@@ -4,6 +4,20 @@ from flask import render_template
 from info.utits.common import user_login_data
 
 
+#127.0.0.1:5000/user/base_info
+@profile_bp.route('/base_info')
+@user_login_data
+def user_base_info():
+    """展示用户基本资料页面"""
+    # 获取用户对象
+    user = g.user
+    # 组织返回数据
+    data = {
+        "user_info": user.to_dict() if user else None
+    }
+    return render_template("profile/user_base_info.html",data=data)
+
+
 #127.0.0.1:5000/user/info
 @profile_bp.route('/info')
 @user_login_data
