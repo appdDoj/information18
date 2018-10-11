@@ -58,7 +58,7 @@ def add_test_users():
     users = []
     # 获取当前实际
     now = datetime.datetime.now()
-    for num in range(0, 10000):
+    for num in range(10000, 10010):
         try:
             user = User()
             user.nick_name = "%011d" % num
