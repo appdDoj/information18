@@ -12,6 +12,68 @@ from info import constants
 from info.models import User, Category, News
 
 
+# /user/news_list?p=2
+@profile_bp.route('/news_list')
+@user_login_data
+def news_list():
+    """获取用户发布的新闻列表数据"""
+    """
+    1.获取参数
+        1.1 p: 当前页码
+    2.校验参数
+        2.1 能否转成int类型
+    3.逻辑处理
+        3.0 对象user.collection_news进行分页查询
+    4.返回值
+    """
+    # 1.1 p: 当前页码
+    p = request.args.get("p", 1)
+    # 获取用户对象
+    user = g.user # type: User
+    # 2.1 能否转成int类型
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="参数内容格式错误")
+
+    news_list = []
+    current_page = 1
+    total_page = 1
+    news_dict_list = []
+    if user:
+        # 3.0 对当前用户发布的新闻列表进行分页查询,
+        try:
+            """
+            接口对比：
+            用户收藏列表： user.collection_news
+            用户发布的新闻列表： News.query.filter(News.user_id == user.id)
+            """
+            paginate = News.query.filter(News.user_id == user.id).paginate(p, constants.OTHER_NEWS_PAGE_MAX_COUNT, False)
+            # 当前页码的所有数据
+            news_list = paginate.items
+            # 当前页码
+            current_page = paginate.page
+            # 总页数
+            total_page = paginate.pages
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询用户发布新闻分页数据异常")
+
+        # 对象列表转字典列表
+        for news in news_list if news_list else []:
+            news_dict_list.append(news.to_review_dict())
+
+    # 组织数据
+    data = {
+        "news_list": news_dict_list,
+        "current_page": current_page,
+        "total_page": total_page
+    }
+    # 前后端不分离
+    return render_template("profile/user_news_list.html", data=data)
+
+
 @profile_bp.route('/news_release', methods=['GET', 'POST'])
 @user_login_data
 def news_release():
