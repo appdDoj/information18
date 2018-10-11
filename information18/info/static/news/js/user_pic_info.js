@@ -8,6 +8,26 @@ $(function () {
     $(".pic_info").submit(function (e) {
         e.preventDefault()
 
-        //TODO 上传头像
+        // 上传头像
+        // ajaxSubmit等同于ajax请求和form表单的结合
+        // ajax请求帮助发送请求和监听回调
+        // form表单帮助提交数据
+        $(this).ajaxSubmit({
+            url: "/user/pic_info",
+            type: "POST",
+            headers: {
+                "X-CSRFToken": getCookie('csrf_token')
+            },
+            success: function (resp) {
+                if (resp.errno == "0") {
+                    $(".now_user_pic").attr("src", resp.data.avatar_url)
+                    $(".user_center_pic>img", parent.document).attr("src", resp.data.avatar_url)
+                    $(".user_login>img", parent.document).attr("src", resp.data.avatar_url)
+                }else {
+                    alert(resp.errmsg)
+                }
+            }
+        })
+
     })
 })
