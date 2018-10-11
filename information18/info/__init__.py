@@ -125,5 +125,9 @@ def create_app(config_name):
     from info.moduls.profile import profile_bp
     app.register_blueprint(profile_bp)
 
+    # 注册管理页面的蓝图
+    from info.moduls.admin import admin_bp
+    app.register_blueprint(admin_bp)
+
     # 返回app
     return app

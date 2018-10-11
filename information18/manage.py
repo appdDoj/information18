@@ -27,6 +27,8 @@ manager.add_command("db", MigrateCommand)
 """
 使用方法：
 python3 manage.py createsuperuser -n "账号名称" -p "密码"
+python3 manage.py createsuperuser --name "账号名称" --password "密码"
+
 """
 
 
