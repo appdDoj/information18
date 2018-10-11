@@ -13,19 +13,19 @@
 	</div>
 	<div class="spannels">
 		<div class="spannel scolor01">
-			<em>36365</em><span>人</span>
+			<em>{{ data.total_count }}</em><span>人</span>
 			<b>用户总数</b>
 		</div>
 		<div class="spannel scolor02">
-			<em>146</em><span>人</span>
+			<em>{{ data.mon_count }}</em><span>人</span>
 			<b>用户月新增数</b>
 		</div>
 		<div class="spannel2 scolor03">
-			<em>32</em><span>人</span>
+			<em>{{ data.day_count }}</em><span>人</span>
 			<b>用户日新增数</b>
-		</div>		
+		</div>
 	</div>
-	
+
 	<div class="pannel">
 		<div id="chart_show" class="chart_show"></div>
 	</div>
@@ -54,28 +54,28 @@
 					            saveAsImage : {show: true}
 					        }
 					    },
-				    	calculable : true,               
+				    	calculable : true,
 					    xAxis : [
 					        {
 		                        name: '今天',
 					            type : 'category',
 					            boundaryGap : false,
-					            data : ["08:15","09:15","10:15","11:15","12:15","13:15","14:15","15:15","16:15","17:15","18:15","19:15"]
+					            data : {{ data.active_date | safe }}
 					        }
-					    ],        
+					    ],
 					    yAxis : [
 					        {
 		                        name: '活跃用户数量',
 					            type : 'value'
 					        }
-					    ],      
+					    ],
 					    series : [
 					        {
 					            name:'active',
 					            type:'line',
 					            smooth:true,
 					            itemStyle: {normal: {areaStyle: {type: 'default'}, color: '#f80'}, lineStyle: {color: '#f80'}},
-					            data:[14951,14861,7186,15861,14951,14861,7186,14951,14861,7186,15861,14951]
+					            data:{{ data.active_count }}
 					        }],
 					    areaStyle:{
 						        normal:{
