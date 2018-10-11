@@ -1,17 +1,32 @@
-
 from flask import current_app
+from flask import g
 from flask import request, redirect, url_for
 from flask import session
 from info import db
 from info.models import User
 from . import admin_bp
 from flask import render_template
+from info.utits.common import user_login_data
+
+
+@admin_bp.route('/user_count', methods=['GET', 'POST'])
+@user_login_data
+def user_count():
+    """用户数据统计接口"""
+    if request.method == 'GET':
+        return render_template("admin/user_count.html")
 
 
 @admin_bp.route('/', methods=['GET', 'POST'])
+@user_login_data
 def admin_index():
     """管理员首页"""
-    return render_template("admin/index.html")
+    # 获取用户对象
+    user = g.user
+    data = {
+        "user_info": user.to_dict() if user else None
+    }
+    return render_template("admin/index.html", data=data)
 
 
 # 127.0.0.1:5000/admin/login
