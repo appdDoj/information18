@@ -9,7 +9,35 @@ from . import profile_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
-from info.models import User
+from info.models import User, Category
+
+
+@profile_bp.route('/news_release', methods=['GET', 'POST'])
+@user_login_data
+def news_release():
+    """新闻发布页面展示&发布新闻后端接口"""
+    # 获取用户对象
+    user = g.user
+    if request.method == "GET":
+        # 查询分类数据
+        try:
+            categories = Category.query.all()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询分类数据异常")
+        # 对象列表转字典列表
+        category_dict_list = []
+        for category in categories if categories else []:
+            category_dict_list.append(category.to_dict())
+        # 移除最新分类
+        category_dict_list.pop(0)
+        # 组织数据
+        data = {
+            "categories": category_dict_list
+        }
+        return render_template("profile/user_news_release.html", data=data)
+
+
 
 
 # /user/collection?p=2
