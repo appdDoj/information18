@@ -2,12 +2,117 @@ from flask import current_app
 from flask import g, jsonify
 from flask import request
 from flask import session
-
+from info.utits.pic_storage import pic_storage
 from info import db
 from info.utits.response_code import RET
 from . import profile_bp
 from flask import render_template
 from info.utits.common import user_login_data
+from info import constants
+
+
+@profile_bp.route('/pass_info', methods=['GET', 'POST'])
+@user_login_data
+def pass_info():
+    """修改用户密码的页面展示&业务逻辑"""
+    # 获取用户对象
+    user = g.user
+    if request.method == 'GET':
+        return render_template("profile/user_pass_info.html")
+
+    # POST请求：修改密码
+    """
+    1.获取参数
+        1.1 old_password:旧密码， new_password:新密码
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 先校验旧密码是否填写正确
+        3.1 将新的密码赋值到user对象属性中
+        3.2 保存回数据库
+    4.返回值
+    """
+    # 1.1 old_password:旧密码， new_password:新密码
+    old_password = request.json.get('old_password')
+    new_password = request.json.get('new_password')
+
+    # 2.1 非空判断
+    if not all([old_password, new_password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 3.0 先校验旧密码是否填写正确
+    if not user.check_passowrd(old_password):
+        # 旧密码填写错误
+        return jsonify(errno=RET.DATAERR, errmsg="旧密码填写错误")
+    # 3.1 将新的密码赋值到user对象属性中
+    user.password = new_password
+
+    # 3.2 保存回数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="修改密码异常")
+
+    #4.返回值
+    return jsonify(errno=RET.OK, errmsg="修改密码成功")
+
+
+@profile_bp.route('/pic_info', methods=['GET', 'POST'])
+@user_login_data
+def pic_info():
+    """修改用户头像接口"""
+
+    # 获取用户对象
+    user = g.user
+    # GET请求：渲染修改用户图像页面
+    if request.method == 'GET':
+        return render_template("profile/user_pic_info.html")
+
+    # POST请求，获取用户上传的图片，保存到七牛云
+    try:
+        pic_data = request.files.get('avatar').read()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="读取图片数据异常")
+
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 调用封装好的工具类上传图片
+    try:
+        pic_name = pic_storage(pic_data)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片到七牛云异常")
+    """
+    方法1： avatar_url = 域名 + 图片名称
+    方法2： avatar_url = 图片名称  （采用这种，方便后期修改域名）
+    """
+    # 保存图片名称到用户对象
+    user.avatar_url = pic_name
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存用户头像数据异常")
+
+    # 完整的图片url
+    full_url = constants.QINIU_DOMIN_PREFIX + pic_name
+    # 组织数据
+    data = {
+        "avatar_url": full_url
+    }
+    # 返回值
+    return jsonify(errno=RET.OK, errmsg="修改用户头像成功", data=data)
+
+
 
 
 #127.0.0.1:5000/user/base_info
