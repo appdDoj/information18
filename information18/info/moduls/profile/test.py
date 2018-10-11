@@ -286,9 +286,6 @@ def get_detail_news(news_id):
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询新闻详情异常")
 
-    # 新闻访问量累加
-    news.clicks += 1
-
     # 新闻对象转字典
     news_dict = news.to_dict()
 

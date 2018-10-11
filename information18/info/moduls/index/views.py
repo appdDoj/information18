@@ -89,6 +89,7 @@ def get_news_list():
 @user_login_data
 def index():
 
+
     # -------------------用户数据查询------------------
     #1.获取用户id-
     # user_id = session.get("user_id")
@@ -143,7 +144,7 @@ def index():
     # 分类的对象列表转换成字典列表
     category_dict_list = []
     for category in categories if categories else []:
-        # 将分类对象转换成字典s
+        # 将分类对象转换成字典
         category_dict_list.append(category.to_dict())
 
     data = {
