@@ -17,7 +17,8 @@ def user_count():
         return render_template("admin/user_count.html")
 
 
-@admin_bp.route('/', methods=['GET', 'POST'])
+# 127.0.0.1:5000/admin/
+@admin_bp.route('/index', methods=['GET', 'POST'])
 @user_login_data
 def admin_index():
     """管理员首页"""
@@ -30,11 +31,24 @@ def admin_index():
 
 
 # 127.0.0.1:5000/admin/login
+# http://127.0.0.1:5000/admin/login
 @admin_bp.route('/login', methods=['GET', 'POST'])
 def admin_login():
     """管理员用户登录接口"""
     if request.method == 'GET':
-        return render_template("admin/login.html")
+
+        """
+        管理员是否登录判断
+        """
+        user_id = session.get("user_id")
+        is_admin = session.get("is_admin", False)
+
+        if user_id and is_admin:
+            # 跳转到管理员首页
+            return redirect(url_for("admin.admin_index"))
+        else:
+            # 管理没有登录过
+            return render_template("admin/login.html")
 
     # POST请求：管路员用户登录逻辑
     """
