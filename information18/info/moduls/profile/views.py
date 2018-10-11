@@ -9,7 +9,7 @@ from . import profile_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
-from info.models import User, Category
+from info.models import User, Category, News
 
 
 @profile_bp.route('/news_release', methods=['GET', 'POST'])
@@ -37,7 +37,73 @@ def news_release():
         }
         return render_template("profile/user_news_release.html", data=data)
 
+    # POST请求：新闻发布
+    """
+    1.获取参数
+        1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要
+            index_image:新闻主图片， content:新闻内容，user:登录用户
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 将图片上传到七牛云保存
+        3.1 创建新闻对象，给各个属性赋值
+        3.2 保存回数据库
+    4.返回值
+    """
+    #1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要 index_image:新闻主图片， content:新闻内容，user:登录用户
+    title = request.form.get("title")
+    category_id = request.form.get("category_id")
+    digest = request.form.get("digest")
+    index_image = request.files.get("index_image")
+    content = request.form.get("content")
+    # 获取用户对象
+    user = g.user
+    # 新闻来源
+    source = "个人发布"
 
+    #2.1 非空判断
+    if not all([title, category_id, digest, index_image, content]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    #2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    try:
+        index_image_data = index_image.read()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="读取图片数据异常")
+
+    # 3.0 将图片上传到七牛云保存
+    try:
+        pic_name = pic_storage(index_image_data)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传到七牛云失败")
+
+    # 3.1 创建新闻对象，给各个属性赋值
+    news = News()
+    news.title = title
+    news.category_id = category_id
+    news.digest = digest
+    news.index_image_url = constants.QINIU_DOMIN_PREFIX + pic_name
+    news.source = source
+    news.content = content
+    # 个人发布的新闻设置为审核中 1：审核中 0：审核通过
+    news.status = 1
+    news.user_id = user.id
+    # 保存到数据库
+    try:
+        db.session.add(news)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻数据异常")
+
+    # 4.返回值
+    return jsonify(errno=RET.OK, errmsg="发布新闻成功")
 
 
 # /user/collection?p=2

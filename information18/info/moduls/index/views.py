@@ -51,8 +51,8 @@ def get_news_list():
             # 需要根据新闻创建时间的降序排序和分类id
             paginate = News.query.filter(News.category_id == cid).order_by(News.create_time.desc()).paginate(page, per_page, False)
     """
-    # 条件列表
-    filters = []
+    # 条件列表 默认条件：查询新闻审核通过的
+    filters = [News.status == 0]
     if cid != 1: # 2 3 4 5
         # == 符号被sqlalchemy底层给重写了__eq__返回的是一个查询条件，而不是Bool值
         filters.append(News.category_id == cid)
