@@ -9,6 +9,65 @@ from . import profile_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
+from info.models import User
+
+
+# /user/collection?p=2
+@profile_bp.route('/collection', methods=['GET', 'POST'])
+@user_login_data
+def user_collection_news():
+    """获取用户收藏的新闻列表数据"""
+    """
+    1.获取参数
+        1.1 p: 当前页码
+    2.校验参数
+        2.1 能否转成int类型
+    3.逻辑处理
+        3.0 对象user.collection_news进行分页查询
+    4.返回值
+    """
+    # 1.1 p: 当前页码
+    p = request.args.get("p", 1)
+    # 获取用户对象
+    user = g.user # type: User
+    # 2.1 能否转成int类型
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.PARAMERR, errmsg="参数内容格式错误")
+
+    collections = []
+    current_page = 1
+    total_page = 1
+    #3.0 对象user.collection_news进行分页查询,
+    # 真正使用collection_news的时候是一个列表，如果是去查询，就是一个查询对象
+    try:
+
+        paginate = user.collection_news.paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+        # 当前页码的所有数据
+        collections = paginate.items
+        # 当前页码
+        current_page = paginate.page
+        # 总页数
+        total_page = paginate.pages
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询用户收藏分页数据异常")
+
+    # 对象列表转字典列表
+    collection_dict_list = []
+    for news in collections if collections else []:
+        collection_dict_list.append(news.to_basic_dict())
+
+    # 组织数据
+    data = {
+        "collections": collection_dict_list,
+        "current_page": current_page,
+        "total_page": total_page
+    }
+    # 前后端不分离
+    return render_template("profile/user_collection.html", data=data)
 
 
 @profile_bp.route('/pass_info', methods=['GET', 'POST'])

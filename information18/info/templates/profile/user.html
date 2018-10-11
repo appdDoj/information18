@@ -22,7 +22,7 @@
 				<li><a href="{{ url_for("profile.pic_info") }}" target="main_frame">头像设置</a></li>
 				<li><a href="../../static/news/html/user_follow.html" target="main_frame">我的关注</a></li>
 				<li><a href="{{ url_for("profile.pass_info") }}" target="main_frame">密码修改</a></li>
-				<li><a href="../../static/news/html/user_collection.html" target="main_frame">我的收藏</a></li>
+				<li><a href="{{ url_for("profile.user_collection_news") }}" target="main_frame">我的收藏</a></li>
 				<li><a href="../../static/news/html/user_news_release.html" target="main_frame">新闻发布</a></li>
 				<li><a href="../../static/news/html/user_news_list.html" target="main_frame">新闻列表</a></li>
 			</ul>
@@ -145,7 +145,7 @@
 {#				<div class="error_tip">密码不能为空</div>#}
 {#			</div>#}
 {#			<div class="form_group">				#}
-{#				<input type="password" name="code_pwd" class="codKe_pwd">#}
+{#				<input type="password" name="code_pwd" class="code_pwd">#}
 {#				<div class="input_tip">图形验证码</div>#}
 {#				<img src="../../static/news/images/pic_code.png" class="get_pic_code">#}
 {#				<div class="error_tip">图形码不能为空</div>#}
