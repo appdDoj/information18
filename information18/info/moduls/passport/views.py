@@ -18,9 +18,11 @@ def login_out():
     """退出登录"""
 
     # 删除session中用户登录信息
-    session.pop("user_id")
-    session.pop("nick_name")
-    session.pop("mobile")
+    session.pop("user_id", None)
+    session.pop("nick_name", None)
+    session.pop("mobile", None)
+    # 切记：当管理员用户退出登录的时候一定要清楚标致位
+    session.pop("is_admin", None)
     return jsonify(errno=RET.OK, errmsg="退出登录成功")
 
 
