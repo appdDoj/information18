@@ -134,25 +134,26 @@ def user_collection_news():
     collections = []
     current_page = 1
     total_page = 1
-    #3.0 对象user.collection_news进行分页查询,
-    # 真正使用collection_news的时候是一个列表，如果是去查询，就是一个查询对象
-    try:
-
-        paginate = user.collection_news.paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
-        # 当前页码的所有数据
-        collections = paginate.items
-        # 当前页码
-        current_page = paginate.page
-        # 总页数
-        total_page = paginate.pages
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="查询用户收藏分页数据异常")
-
-    # 对象列表转字典列表
     collection_dict_list = []
-    for news in collections if collections else []:
-        collection_dict_list.append(news.to_basic_dict())
+    if user:
+        # 3.0 对象user.collection_news进行分页查询,
+        # 真正使用collection_news的时候是一个列表，如果是去查询，就是一个查询对象
+        try:
+
+            paginate = user.collection_news.paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+            # 当前页码的所有数据
+            collections = paginate.items
+            # 当前页码
+            current_page = paginate.page
+            # 总页数
+            total_page = paginate.pages
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询用户收藏分页数据异常")
+
+        # 对象列表转字典列表
+        for news in collections if collections else []:
+            collection_dict_list.append(news.to_basic_dict())
 
     # 组织数据
     data = {
