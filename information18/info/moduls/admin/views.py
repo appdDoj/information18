@@ -6,6 +6,7 @@ from flask import request, redirect, url_for
 from flask import session
 from info import db
 from info.models import User, News, Category
+from info.utits.pic_storage import pic_storage
 from info.utits.response_code import RET
 from . import admin_bp
 from flask import render_template
@@ -68,6 +69,76 @@ def news_edit_detail():
 
         return render_template("admin/news_edit_detail.html", data=data)
 
+    # POST请求：新闻编辑
+    """
+    1.获取参数
+        1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要
+            index_image:新闻主图片， content:新闻内容
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 将图片上传到七牛云保存
+        3.1 创建新闻对象，给各个属性赋值
+        3.2 保存回数据库
+    4.返回值
+    """
+    # 1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要 index_image:新闻主图片， content:新闻内容，user:登录用户
+    title = request.form.get("title")
+    category_id = request.form.get("category_id")
+    digest = request.form.get("digest")
+    index_image = request.files.get("index_image")
+    content = request.form.get("content")
+    # 获取新闻id
+    news_id = request.form.get("news_id")
+
+    # 2.1 非空判断
+    if not all([title, category_id, digest, content, news_id]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    # 如果图片有数据
+    pic_name = None
+    if index_image:
+        try:
+            index_image_data = index_image.read()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.PARAMERR, errmsg="读取图片数据异常")
+
+        # 3.0 将图片上传到七牛云保存
+        try:
+            pic_name = pic_storage(index_image_data)
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.THIRDERR, errmsg="上传到七牛云失败")
+
+    # 查询新闻对象
+    news = None
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻异常")
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻不存在")
+
+    # 3.1 创建新闻对象，给各个属性赋值
+    news.title = title
+    news.category_id = category_id
+    news.digest = digest
+    news.content = content
+    if pic_name:
+        news.index_image_url = constants.QINIU_DOMIN_PREFIX + pic_name
+
+    # 保存到数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻数据异常")
+
+    # 4.返回值
+    return jsonify(errno=RET.OK, errmsg="发布新闻成功")
 
 
 # /admin/news_edit?p=页码
