@@ -11,6 +11,66 @@ from . import news_bp
 from flask import render_template
 
 
+@news_bp.route('/followed_user', methods=['POST'])
+@user_login_data
+def followed_user():
+    """关注、取消关注后端接口"""
+    """
+    1.获取参数
+        1.1 user_id:用户id action:关注、取消关注的行为（follow,follow）
+    2.校验参数
+        2.1 非空判断
+        2.2 action in ['follow', 'follow']
+    3.逻辑处理
+        3.0 根据user_id查询当前作者
+        3.1 follow关注：作者是否在user.followed用户偶像列表中，在就不能重复关注，不在就添加进去
+        3.2 unfollow取消关注：作者是否在user.followed用户偶像列表中，在，才能取消关注
+    4.返回值
+    """
+    #1.1 用户对象 新闻id comment_id评论的id，action:(点赞、取消点赞)
+    params_dict = request.json
+    user_id = params_dict.get("user_id")
+    action = params_dict.get("action")
+    user = g.user
+
+    #2.1 非空判断
+    if not all([user_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    #2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    #2.3 action in ['follow', 'unfollow']
+    if action not in ["follow", "unfollow"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action参数错误")
+
+    # 3.0 根据user_id查询当前作者
+    try:
+        author = User.query.get(user_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询作者异常")
+    if not author:
+        return jsonify(errno=RET.NODATA, errmsg="作者不存在")
+
+    # 3.1 follow关注：作者是否在user.followed用户偶像列表中，在就不能重复关注，不在就添加进去
+    if action == "follow":
+        # 关注 作者在user.followed用户偶像列表中
+        if author in user.followed:
+            return jsonify(errno=RET.DATAEXIST, errmsg="不能重复关注")
+        else:
+            # 将作者添加到用户的偶像列表中
+            user.followed.append(author)
+    # 3.2 unfollow取消关注：作者是否在user.followed用户偶像列表中，在，才能取消关注
+    else:
+        # 作者在用户的偶像列表中，表示已经关注 才能取消关注
+        if author in user.followed:
+            user.followed.remove(author)
+
+    return jsonify(errno=RET.OK, errmsg="OK")
+
+
 @news_bp.route('/comment_like', methods=['POST'])
 @user_login_data
 def comment_like():
