@@ -1,6 +1,6 @@
 import time
 from datetime import datetime, timedelta
-from flask import current_app, jsonify
+from flask import current_app, jsonify, abort
 from flask import g
 from flask import request, redirect, url_for
 from flask import session
@@ -11,6 +11,103 @@ from . import admin_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
+
+
+# /admin/news_review_detail?news_id=1
+@admin_bp.route('/news_review_detail', methods=['POST', 'GET'])
+@user_login_data
+def news_review_detail():
+    """新闻审核详情页面接口"""
+    if request.method == "GET":
+
+        # 获取新闻id
+        news_id = request.args.get("news_id")
+
+        if not news_id:
+            return Exception("参数不足")
+
+        # 查询新闻
+        try:
+            news = News.query.get(news_id)
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询新闻异常")
+
+        if not news:
+            abort(404)
+
+        # 对象转字典
+        news_dict = news.to_dict() if news else None
+
+        data = {
+            "news": news_dict
+        }
+        # 返回审核页面，同时将新闻数据带回
+        return render_template("admin/news_review_detail.html", data=data)
+
+
+    """
+    1.获取参数
+        1.1 新闻id：news_id ,action：通过、拒绝
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 根据新闻id查询新闻
+        3.1 通过： news.status=0
+        3.2 拒绝：news.status=-1 news.reason = 拒绝原因
+    4.返回值
+
+    """
+    #1.1 新闻id：news_id ,action：通过、拒绝
+    params_dict = request.json
+    news_id = params_dict.get("news_id")
+    action = params_dict.get("action")
+    user = g.user
+
+    #2.1 非空判断
+    if not all([news_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    #2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    #2.3 action in ["accept", "reject"]
+    if action not in ["accept", "reject"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action参数错误")
+
+    #3.0 根据新闻id查询新闻
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻异常")
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻不存在")
+
+    #3.1 通过： news.status=0
+    if action == "accept":
+        news.status = 0
+    # 3.2 拒绝：news.status=-1 news.reason = 拒绝原因
+    else:
+        reason = request.json.get("reason")
+        if reason:
+            # 审核未通过
+            news.status = -1
+            # 拒绝原因
+            news.reason = reason
+        else:
+            return jsonify(errno=RET.PARAMERR, errmsg="请填写拒绝原因")
+
+    # 保存回数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻异常")
+
+    return jsonify(errno=RET.OK, errmsg="OK")
 
 
 # /admin/news_review?p=页码

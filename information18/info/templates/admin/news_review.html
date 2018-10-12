@@ -39,7 +39,7 @@
                     未审核
                 {% endif %}</td>
                 <td>
-                    <a href="#" class="review">审核</a>
+                    <a href="{{ url_for("admin.news_review_detail") }}?news_id={{ news.id }}" class="review">审核</a>
                 </td>
             </tr>
         {% endfor %}
