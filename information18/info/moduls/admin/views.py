@@ -5,12 +5,66 @@ from flask import g
 from flask import request, redirect, url_for
 from flask import session
 from info import db
-from info.models import User
+from info.models import User, News
 from info.utits.response_code import RET
 from . import admin_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
+
+
+# /admin/news_review?p=页码
+@admin_bp.route('/news_review')
+def news_review():
+    """新闻审核页面展示"""
+    # 1.获取参数
+    p = request.args.get("p", 1)
+
+    # 2.校验参数
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+    # 用户对象列表
+    news_list = []
+    current_page = 1
+    total_page = 1
+    # 获取查询关键字
+    keywords = request.args.get("keywords")
+
+    # 条件列表 默认条件：查询审核未通过&未审核的新闻
+    filters = [News.status != 0]
+    # 如果有关键字，将关键字条件添加到列表
+    if keywords:
+        filters.append(News.title.contains(keywords))
+    try:
+        paginate = News.query.filter(*filters).order_by(News.create_time.desc()) \
+            .paginate(p, constants.ADMIN_NEWS_PAGE_MAX_COUNT, False)
+        # 获取当前页码所有数据
+        news_list = paginate.items
+        # 当前页码
+        current_page = paginate.page
+        # 总页数
+        total_page = paginate.pages
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询分页数据异常")
+
+    # 对象列表转字典列表
+    news_dict_list = []
+    for news in news_list if news_list else []:
+        news_dict_list.append(news.to_review_dict())
+
+    # 组织数据
+    data = {
+        "news_list": news_dict_list,
+        "current_page": current_page,
+        "total_page": total_page
+    }
+
+    return render_template("admin/news_review.html", data=data)
+
 
 
 # /admin/user_list?p=页码
