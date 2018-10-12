@@ -1,14 +1,65 @@
 import time
 from datetime import datetime, timedelta
-from flask import current_app
+from flask import current_app, jsonify
 from flask import g
 from flask import request, redirect, url_for
 from flask import session
 from info import db
 from info.models import User
+from info.utits.response_code import RET
 from . import admin_bp
 from flask import render_template
 from info.utits.common import user_login_data
+from info import constants
+
+
+# /admin/user_list?p=页码
+@admin_bp.route('/user_list')
+@user_login_data
+def user_list():
+    """用户列表接口"""
+    # 1.获取参数
+    p = request.args.get("p", 1)
+    # 获取用户对象
+    user = g.user
+    # 2.校验参数
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+    # 用户对象列表
+    user_list = []
+    current_page = 1
+    total_page = 1
+    try:
+         paginate = User.query.filter(User.is_admin == False).order_by(User.create_time.desc())\
+            .paginate(p, constants.ADMIN_USER_PAGE_MAX_COUNT, False)
+         # 获取当前页码所有数据
+         user_list = paginate.items
+         # 当前页码
+         current_page = paginate.page
+         # 总页数
+         total_page = paginate.pages
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询分页数据异常")
+
+    # 对象列表转字典列表
+    user_dict_list = []
+    for user in user_list if user_list else []:
+        user_dict_list.append(user.to_admin_dict())
+
+    # 组织数据
+    data = {
+        "users": user_dict_list,
+        "current_page": current_page,
+        "total_page": total_page
+    }
+
+    return render_template("admin/user_list.html", data=data)
+
+
 
 
 # /admin/user_count
@@ -66,8 +117,19 @@ def user_count():
     active_count = []
 
     # 依次添加数据，再反转
-    for i in range(0, 31): # 1， 2， 3 .. 31
+    for i in range(0, 31): # 0 1， 2， 3 .. 30
         """
+        #当前时间 now_date =   2018-10-12号 00:00:00
+        #开始时间 begin_date = 2018-10-12号号 00:00:00
+        #结束时间 end_date = 2018-10-12号 23:59:59 + 1天 = 2018-10-10号 24:00:00
+        结束时间 = 开始时间 + 1天
+
+        #当前时间 now_date =  2018-10-11号 00:00:00
+        #开始时间 begin_date = 2018-10-11号 00:00:00
+        #结束时间 end_date = 2018-11-11号 23:59:59 + 1天 = 2018-10-10号 24:00:00
+
+
+
         #当前时间 now_date =  2018-10-11号 00:00:00
         #开始时间 begin_date = 2018-10-10号 00:00:00
         #结束时间 end_date = 2018-10-10号 00:00:00 + 1天 = 2018-10-10号 24:00:00
