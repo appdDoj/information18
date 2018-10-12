@@ -14,6 +14,56 @@ from info.utits.common import user_login_data
 from info import constants
 
 
+@admin_bp.route('/add_category', methods=['POST'])
+def add_category():
+    """新增/编辑分类"""
+    """
+    1.获取参数
+        1.1 category_name:分类名称, category_id:分类id
+    2.校验参数
+        2.1 非空判断
+    3.逻辑处理
+        3.0 category_id存在：分类编辑
+        3.1 category_id不存在：新增分类
+    4.返回值
+    """
+    category_name = request.json.get("name")
+    category_id = request.json.get("id")
+
+    if not category_name:
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    # 3.0 category_id存在：分类编辑
+    if category_id:
+        # 查询分类对象
+        try:
+            category = Category.query.get(category_id)
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询分类异常")
+        if not category:
+            return jsonify(errno=RET.NODATA, errmsg="分类不存在")
+        # 编辑分类的名称
+        category.name = category_name
+
+    # 3.1 category_id不存在：新增分类
+    else:
+        # 创建分类对象
+        category = Category()
+        category.name = category_name
+        db.session.add(category)
+
+    # 保存回数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="保存分类对象异常")
+
+    #4.返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
+
+
 @admin_bp.route('/news_type')
 def news_type():
     """分类页面展示"""
