@@ -287,9 +287,10 @@ def get_detail_news(news_id):
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询新闻详情异常")
 
-    # 如果新闻不存在，抛出异常
+    #如果新闻不存在，抛出异常
     if not news:
         return abort(404)
+
     # 新闻访问量累加
     news.clicks += 1
 
@@ -299,12 +300,36 @@ def get_detail_news(news_id):
     # -------------------查询当前用户是否收藏该新闻------------------
     # is_collected = True表示收藏 反之
     is_collected = False
+    # 是否关注的标志位
+    is_followed = False
 
     # 用户已经登录
     if user:
         if news in user.collection_news:
             # 表示该用户已经收藏该新闻
             is_collected = True
+
+    # 获取到作者
+    author = None
+    try:
+        author = User.query.filter(User.id == news.user_id).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="")
+
+    # 当前用户存在&作者存在
+    if user and author:
+        """
+        user: 当前用户  author：发布当前新闻的作者
+
+        #1. 当前用户在作者的粉丝列表内，表示当前用户关注过该作者
+        user in author.followers
+        #2. 当前作者在用户的偶像列表内，表示当前用户关注过该作者
+        author in user.followed
+        """
+        if author in user.followed:
+            is_followed = True
+
 
     # -------------------查询当前新闻评论列表------------------
     # 获取评论对象列表：[comment对象1,comment对象2,....]
@@ -357,6 +382,7 @@ def get_detail_news(news_id):
         "news_rank_list": news_rank_dict_list,
         "news": news_dict,
         "is_collected": is_collected,
+        "is_followed": is_followed,
         "comments": comment_dict_list
     }
 
