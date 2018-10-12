@@ -6,89 +6,11 @@ from flask import request, redirect, url_for
 from flask import session
 from info import db
 from info.models import User, News, Category
-from info.utits.pic_storage import pic_storage
 from info.utits.response_code import RET
 from . import admin_bp
 from flask import render_template
 from info.utits.common import user_login_data
 from info import constants
-
-
-@admin_bp.route('/add_category', methods=['POST'])
-def add_category():
-    """新增/编辑分类"""
-    """
-    1.获取参数
-        1.1 category_name:分类名称, category_id:分类id
-    2.校验参数
-        2.1 非空判断
-    3.逻辑处理
-        3.0 category_id存在：分类编辑
-        3.1 category_id不存在：新增分类
-    4.返回值
-    """
-    category_name = request.json.get("name")
-    category_id = request.json.get("id")
-
-    if not category_name:
-        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
-
-    # 3.0 category_id存在：分类编辑
-    if category_id:
-        # 查询分类对象
-        try:
-            category = Category.query.get(category_id)
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.DBERR, errmsg="查询分类异常")
-        if not category:
-            return jsonify(errno=RET.NODATA, errmsg="分类不存在")
-        # 编辑分类的名称
-        category.name = category_name
-
-    # 3.1 category_id不存在：新增分类
-    else:
-        # 创建分类对象
-        category = Category()
-        category.name = category_name
-        db.session.add(category)
-
-    # 保存回数据库
-    try:
-        db.session.commit()
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="保存分类对象异常")
-
-    #4.返回值
-    return jsonify(errno=RET.OK, errmsg="OK")
-
-
-@admin_bp.route('/news_type')
-def news_type():
-    """分类页面展示"""
-    # 查询所有分类
-    try:
-        categories = Category.query.all()
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="查询分类数据异常")
-
-    # 对象列表转字典列表
-    category_dict_list = []
-    for category in categories if categories else []:
-        category_dict = category.to_dict()
-        category_dict_list.append(category_dict)
-
-    # 移除最新分类
-    category_dict_list.pop(0)
-
-    # 组织数据
-    data = {
-        "categories": category_dict_list
-    }
-
-    return render_template("admin/news_type.html", data=data)
 
 
 @admin_bp.route('/news_edit_detail', methods=['POST', 'GET'])
@@ -138,9 +60,6 @@ def news_edit_detail():
                 category_dict["is_selected"] = True
             category_dict_list.append(category_dict)
 
-        # 移除最新分类
-        category_dict_list.pop(0)
-
         # 组织数据
         data = {
             "news": news_dict,
@@ -149,76 +68,6 @@ def news_edit_detail():
 
         return render_template("admin/news_edit_detail.html", data=data)
 
-    # POST请求：新闻编辑
-    """
-    1.获取参数
-        1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要
-            index_image:新闻主图片， content:新闻内容
-    2.校验参数
-        2.1 非空判断
-    3.逻辑处理
-        3.0 将图片上传到七牛云保存
-        3.1 创建新闻对象，给各个属性赋值
-        3.2 保存回数据库
-    4.返回值
-    """
-    # 1.1 title:新闻标题，category_id:新闻分类id，digest:新闻摘要 index_image:新闻主图片， content:新闻内容，user:登录用户
-    title = request.form.get("title")
-    category_id = request.form.get("category_id")
-    digest = request.form.get("digest")
-    index_image = request.files.get("index_image")
-    content = request.form.get("content")
-    # 获取新闻id
-    news_id = request.form.get("news_id")
-
-    # 2.1 非空判断
-    if not all([title, category_id, digest, content, news_id]):
-        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
-
-    # 如果图片有数据
-    pic_name = None
-    if index_image:
-        try:
-            index_image_data = index_image.read()
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.PARAMERR, errmsg="读取图片数据异常")
-
-        # 3.0 将图片上传到七牛云保存
-        try:
-            pic_name = pic_storage(index_image_data)
-        except Exception as e:
-            current_app.logger.error(e)
-            return jsonify(errno=RET.THIRDERR, errmsg="上传到七牛云失败")
-
-    # 查询新闻对象
-    news = None
-    try:
-        news = News.query.get(news_id)
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="查询新闻异常")
-    if not news:
-        return jsonify(errno=RET.NODATA, errmsg="新闻不存在")
-
-    # 3.1 创建新闻对象，给各个属性赋值
-    news.title = title
-    news.category_id = category_id
-    news.digest = digest
-    news.content = content
-    if pic_name:
-        news.index_image_url = constants.QINIU_DOMIN_PREFIX + pic_name
-
-    # 保存到数据库
-    try:
-        db.session.commit()
-    except Exception as e:
-        current_app.logger.error(e)
-        db.session.rollback()
-        return jsonify(errno=RET.DBERR, errmsg="保存新闻数据异常")
-
-    # 4.返回值
-    return jsonify(errno=RET.OK, errmsg="发布新闻成功")
 
 
 # /admin/news_edit?p=页码
