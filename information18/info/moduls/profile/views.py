@@ -12,6 +12,44 @@ from info import constants
 from info.models import User, Category, News
 
 
+@profile_bp.route('/user_follow')
+@user_login_data
+def user_follow():
+    """获取当前用户关注列表"""
+    # 获取页数
+    p = request.args.get("p", 1)
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+
+    user = g.user
+
+    follows = []
+    current_page = 1
+    total_page = 1
+    try:
+        # user.followed：当前用户的关注列表
+        paginate = user.followed.paginate(p, constants.USER_FOLLOWED_MAX_COUNT, False)
+        # 获取当前页数据
+        follows = paginate.items
+        # 获取当前页
+        current_page = paginate.page
+        # 获取总页数
+        total_page = paginate.pages
+    except Exception as e:
+        current_app.logger.error(e)
+
+    user_dict_li = []
+
+    for follow_user in follows:
+        user_dict_li.append(follow_user.to_dict())
+    data = {"users": user_dict_li, "total_page": total_page, "current_page": current_page}
+
+    return render_template('profile/user_follow.html', data=data)
+
+
 # /user/news_list?p=2
 @profile_bp.route('/news_list')
 @user_login_data
