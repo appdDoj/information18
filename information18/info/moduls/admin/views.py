@@ -80,7 +80,7 @@ def user_count():
         count = 0
         try:
             # 当天活跃量： last_login最后一次登录时间 大于一天的开始，小于一天的结束
-            count = User.query.filter(User.is_admin == False, User.last_login >= day_begin,
+            count = User.query.filter(User.is_admin == False, User.last_login >= begin_date,
                                       User.last_login < end_date).count()
         except Exception as e:
             current_app.logger.error(e)

@@ -70,6 +70,7 @@ def get_news_list():
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询新闻列表数据异常")
 
+
     # 3.2 对象列表转字典列表
     news_dict_list = []
     for news in items if items else []:
