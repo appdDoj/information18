@@ -1,3 +1,4 @@
+from flask import abort
 from flask import current_app, jsonify
 from flask import g
 from flask import request
@@ -286,6 +287,9 @@ def get_detail_news(news_id):
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询新闻详情异常")
 
+    # 如果新闻不存在，抛出异常
+    if not news:
+        return abort(404)
     # 新闻访问量累加
     news.clicks += 1
 
@@ -311,21 +315,22 @@ def get_detail_news(news_id):
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg="查询评论对象异常")
 
+    commentlike_id_list = []
+    if user:
+        # -------------------查询当前用户在当前新闻的评论里边具体点赞了那几条评论------------------
+        # 1. 查询出当前新闻的所有评论，取得所有评论的id —>  comment_id_list: [1,2,3,4,5,6]
+        comment_id_list = [comment.id for comment in comments]
 
-    # -------------------查询当前用户在当前新闻的评论里边具体点赞了那几条评论------------------
-    # 1. 查询出当前新闻的所有评论，取得所有评论的id —>  comment_id_list: [1,2,3,4,5,6]
-    comment_id_list = [comment.id for comment in comments]
-
-    # 2.再通过评论点赞模型(CommentLike)查询当前用户点赞了那几条评论  —>[模型1,模型2...]
-    try:
-        commentlike_model_list = CommentLike.query.filter(CommentLike.comment_id.in_(comment_id_list),
-                                 CommentLike.user_id == user.id).all()
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(errno=RET.DBERR, errmsg="查询评论点赞模型对象异常")
-    # 3. 遍历上一步的评论点赞模型列表，获取所以点赞过的评论id（comment_like.comment_id）
-    # commentlike_id_list => [1, 3, 4]
-    commentlike_id_list = [commentlike_model.comment_id for commentlike_model in commentlike_model_list]
+        # 2.再通过评论点赞模型(CommentLike)查询当前用户点赞了那几条评论  —>[模型1,模型2...]
+        try:
+            commentlike_model_list = CommentLike.query.filter(CommentLike.comment_id.in_(comment_id_list),
+                                     CommentLike.user_id == user.id).all()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询评论点赞模型对象异常")
+        # 3. 遍历上一步的评论点赞模型列表，获取所以点赞过的评论id（comment_like.comment_id）
+        # commentlike_id_list => [1, 3, 4]
+        commentlike_id_list = [commentlike_model.comment_id for commentlike_model in commentlike_model_list]
 
     # 评论对象列表转字典列表
     comment_dict_list = []
